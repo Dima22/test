@@ -14,7 +14,9 @@
     var tileW = 80, tileH = 80;
     var mapW = 30, mapH = 30;
     var stepX = 0, stepY = 0;
-    var speed = 1;
+    var startSpeed = 2;
+    var bodySize = 12;
+    var speed = startSpeed;
     var canvas = document.getElementById('game');
     var screenW = document.documentElement.clientWidth;
     var screenH = document.documentElement.clientHeight;
@@ -23,6 +25,16 @@
     
     var currentSecond = 0, frameCount = 0, frameLastSecond = 0;
     var lastMoveTime = 0;
+    var mapLimit = 8000;
+    var currentX = randomIntBetween(1000, mapLimit-1000);
+    var currentY = randomIntBetween(1000, mapLimit-1000);
+    console.log(currentX);
+    console.log(currentY);
+    
+    var foodMap = [];
+    for(var i=0; i<50; i++){
+        foodMap.push(randomIntBetween(400, mapLimit-400), randomIntBetween(400, mapLimit-400));
+    }
   
     document.addEventListener('DOMContentLoaded', function(event) {
         ctx = canvas.getContext('2d');
@@ -32,12 +44,12 @@
     
     window.addEventListener("keydown", function(e){
         if(e.keyCode === 32){
-            speed = 2;
+            speed = startSpeed*2;
         }
     });
     window.addEventListener("keyup", function(e){
         if(e.keyCode === 32){
-            speed = 1;
+            speed = startSpeed;
         }
     });
     
@@ -79,12 +91,52 @@
                     sX = 1;
                     sY = Math.abs(diffY/diffX);
                 }
-                stepX = diffX > 0 ? stepX - speed*sX : stepX + speed*sX;
-                stepY = diffY > 0 ? stepY - speed*sY : stepY + speed*sY;
+                if(diffX > 0){
+                    if(currentX+10 < mapLimit){
+                        currentX += speed*sX;
+                        stepX -= speed*sX;
+                    }
+                }else{
+                    if(currentX-10 > 0){
+                        currentX -= speed*sX;
+                        stepX += speed*sX;
+                    }
+                }
+                if(diffY > 0){
+                    if(currentY+10 < mapLimit){
+                        currentY += speed*sY;
+                        stepY -= speed*sY;
+                    }
+                }else{
+                    if(currentY-10 > 0){
+                        currentY -= speed*sY;
+                        stepY += speed*sY;
+                    }
+                }
             }else if(diffX !== 0){
-                stepX = diffX > 0 ? stepX - speed : stepX + speed;
+                if(diffX > 0){
+                    if(currentX+10 < mapLimit){
+                        currentX += speed*sX;
+                        stepX -= speed*sX;
+                    }
+                }else{
+                    if(currentX-10 > 0){
+                        currentX -= speed*sX;
+                        stepX += speed*sX;
+                    }
+                }
             }else if(diffY !== 0){
-                stepY = diffY > 0 ? stepY - speed : stepY + speed;
+                if(diffY > 0){
+                    if(currentY+10 < mapLimit){
+                        currentY += speed*sY;
+                        stepY -= speed*sY;
+                    }
+                }else{
+                    if(currentY-10 > 0){
+                        currentY -= speed*sY;
+                        stepY += speed*sY;
+                    }
+                }
             }
             
             if(Math.abs(stepX) > tileW*2){
@@ -111,17 +163,71 @@
             }
         }
         
+        // Character
         ctx.beginPath();
         ctx.globalAlpha = 1;
+        ctx.strokeStyle = '#00B29D';
         ctx.lineWidth = 3;
-        ctx.arc(screenW/2, screenH/2, 20, 0, 2*Math.PI);
+        ctx.arc(screenW/2, screenH/2, bodySize, 0, 2*Math.PI);
         ctx.stroke();
         ctx.closePath();
+        
+        ctx.strokeStyle = '#ffa723'; // orange
+        if(currentX - screenW/2 < 0){
+            var lineX = screenW/2 - currentX;
+            ctx.beginPath();
+            ctx.lineWidth = 4;
+            ctx.moveTo(lineX, 0);
+            ctx.lineTo(lineX, screenH);
+            ctx.stroke();
+        }else if(currentX + screenW/2 > mapLimit){
+            var lineX = screenW/2 + (mapLimit - currentX);
+            ctx.beginPath();
+            ctx.lineWidth = 4;
+            ctx.moveTo(lineX, 0);
+            ctx.lineTo(lineX, screenH);
+            ctx.stroke();
+        }
+        if(currentY - screenH/2 < 0){
+            var lineY = screenH/2 - currentY;
+            ctx.beginPath();
+            ctx.lineWidth = 4;
+            ctx.moveTo(0, lineY);
+            ctx.lineTo(screenW, lineY);
+            ctx.stroke();
+        }else if(currentY + screenH/2 > mapLimit){
+            var lineY = screenH/2 + (mapLimit - currentY);
+            ctx.beginPath();
+            ctx.lineWidth = 4;
+            ctx.moveTo(0, lineY);
+            ctx.lineTo(screenW, lineY);
+            ctx.stroke();
+        }
+        
+        for(var i=0; i<100; i=i+2){
+            if(Math.abs(currentX - foodMap[i]) < screenW/2 && Math.abs(currentY - foodMap[i+1]) < screenH/2){
+                if(Math.abs(currentX - foodMap[i]) < 12 && Math.abs(currentY - foodMap[i+1]) < 12){
+                    foodMap[i] = randomIntBetween(400, mapLimit-400);
+                    foodMap[i+1] = randomIntBetween(400, mapLimit-400);
+                    bodySize += 0.5;
+                    continue;
+                }
+                var foodX = (currentX > foodMap[i]) ? screenW/2 - (currentX - foodMap[i]) : screenW/2 + (foodMap[i] - currentX);
+                var foodY = (currentY > foodMap[i+1]) ? screenH/2 - (currentY - foodMap[i+1]) : screenH/2 + (foodMap[i+1] - currentY);
+                ctx.beginPath();
+                ctx.ellipse(foodX, foodY, 5, 7, Math.PI / 4, 0, 2 * Math.PI);
+                ctx.stroke();
+            }
+        }
         
         ctx.fillStyle = '#ff0000';
         ctx.fillText("FPS: "+frameLastSecond, 10, 20);
         
         myAnim = requestAnimationFrame(drawGame);
+    }
+    
+    function randomIntBetween(min, max) { // min and max included 
+      return Math.floor(Math.random() * (max - min + 1) + min)
     }
     
 	</script>
