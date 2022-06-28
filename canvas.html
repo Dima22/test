@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8">
+	<title>2d test</title>
+
+</head>
+<body style="margin: 0;">
+	<canvas id="game" style="position: fixed"></canvas>
+	<script>
+    var ctx = null;
+    var myAnim;
+    var movingToX, movingToY;
+    var tileW = 80, tileH = 80;
+    var mapW = 30, mapH = 30;
+    var stepX = 0, stepY = 0;
+    var speed = 1;
+    var canvas = document.getElementById('game');
+    var screenW = document.documentElement.clientWidth;
+    var screenH = document.documentElement.clientHeight;
+    canvas.width = screenW; // window.innerWidth document.body.clientWidth
+    canvas.height = screenH; // window.innerHeight document.body.clientHeight
+    
+    var currentSecond = 0, frameCount = 0, frameLastSecond = 0;
+    var lastMoveTime = 0;
+  
+    document.addEventListener('DOMContentLoaded', function(event) {
+        ctx = canvas.getContext('2d');
+
+        drawGame();
+    });
+    
+    window.addEventListener("keydown", function(e){
+        if(e.keyCode === 32){
+            speed = 2;
+        }
+    });
+    window.addEventListener("keyup", function(e){
+        if(e.keyCode === 32){
+            speed = 1;
+        }
+    });
+    
+    canvas.addEventListener('mousemove', function(e){
+        var now = Date.now();
+        if(now - lastMoveTime < 60){ // 60ms
+            return;
+        }
+        lastMoveTime = now;
+        movingToX = e.clientX;
+        movingToY = e.clientY;
+    });
+    
+    /*canvas.addEventListener('mouseout', function(e){
+        movingToX = 0;
+        movingToY = 0;
+    });*/
+    
+    function drawGame(){        
+        var sec = Math.floor(Date.now()/1000);
+        if(sec != currentSecond){
+            currentSecond = sec;
+            frameLastSecond = frameCount;
+            frameCount = 1;
+        }else{
+            frameCount++;
+        }
+        
+        if(movingToX || movingToY){
+            var diffX = movingToX - screenW/2;
+            var diffY = movingToY - screenH/2;
+            var sX = 0;
+            var sY = 0;
+            if(diffX !== 0 && diffY !== 0){
+                if(Math.abs(diffY) > Math.abs(diffX)){
+                    sX = Math.abs(diffX/diffY);
+                    sY = 1;
+                }else{
+                    sX = 1;
+                    sY = Math.abs(diffY/diffX);
+                }
+                stepX = diffX > 0 ? stepX - speed*sX : stepX + speed*sX;
+                stepY = diffY > 0 ? stepY - speed*sY : stepY + speed*sY;
+            }else if(diffX !== 0){
+                stepX = diffX > 0 ? stepX - speed : stepX + speed;
+            }else if(diffY !== 0){
+                stepY = diffY > 0 ? stepY - speed : stepY + speed;
+            }
+            
+            if(Math.abs(stepX) > tileW*2){
+                stepX = stepX > 0 ? stepX - tileW*2 : stepX + tileW*2;
+            }
+            if(Math.abs(stepY) > tileH*2){
+                stepY = stepY > 0 ? stepY - tileH*2 : stepY + tileH*2;
+            }
+        }
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.globalAlpha = 0.5;
+        var state = 0;
+        for(var y=-2.5; y < mapH; y++){
+            for(var x=-2.5; x < mapW; x++){
+                if(state === 0){
+                    ctx.fillStyle = '#999999';
+                    state = 1;
+                }else{
+                    ctx.fillStyle = '#eeeeee';
+                    state = 0;
+                }
+                ctx.fillRect(x*tileW+stepX, y*tileH+stepY, tileW, tileH);
+            }
+        }
+        
+        ctx.beginPath();
+        ctx.globalAlpha = 1;
+        ctx.lineWidth = 3;
+        ctx.arc(screenW/2, screenH/2, 20, 0, 2*Math.PI);
+        ctx.stroke();
+        ctx.closePath();
+        
+        ctx.fillStyle = '#ff0000';
+        ctx.fillText("FPS: "+frameLastSecond, 10, 20);
+        
+        myAnim = requestAnimationFrame(drawGame);
+    }
+    
+	</script>
+</body>
+</html>
