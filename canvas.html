@@ -9,9 +9,9 @@
 	<canvas id="game" style="position: fixed"></canvas>
 	<script>
     var ctx = null;
-    var myAnim;
+    //var myAnim;
     var movingToX, movingToY;
-    var tileW = 80, tileH = 80;
+    var tileW = 80, tileH = 80; // 169 291
     var mapW = 30, mapH = 30;
     var stepX = 0, stepY = 0;
     var startSpeed = 3;
@@ -24,24 +24,34 @@
     canvas.width = screenW; // window.innerWidth document.body.clientWidth
     canvas.height = screenH; // window.innerHeight document.body.clientHeight
     const playerImage = new Image();
-    playerImage.src = 'bunny.png';
+    playerImage.src = 'img/bunny.png';
+    const carrotImg = new Image();
+    carrotImg.src = 'img/carrot.png';
+    const imgPatt = new Image();
+    imgPatt.src = 'img/pattern.jpg';
+    const imgRock = new Image();
+    imgRock.src = 'img/rock.jpg';
     
     var currentSecond = 0, frameCount = 0, frameLastSecond = 0;
     var lastMoveTime = 0;
-    var mapLimit = 8000;
+    var lastRunSecond = 0;
+    var mapLimit = 7700;
     var currentX = randomIntBetween(1000, mapLimit-1000);
     var currentY = randomIntBetween(1000, mapLimit-1000);
-    console.log(currentX);
-    console.log(currentY);
+    currentX = 500;
+    currentY = 500;
+    //console.log(currentX);
+    //console.log(currentY);
     
     var foodMap = [];
+    var shitMap = [];
     for(var i=0; i<50; i++){
         foodMap.push(randomIntBetween(400, mapLimit-400), randomIntBetween(400, mapLimit-400));
     }
   
     document.addEventListener('DOMContentLoaded', function(event) {
         ctx = canvas.getContext('2d');
-
+        
         drawGame();
     });
     
@@ -77,6 +87,18 @@
             currentSecond = sec;
             frameLastSecond = frameCount;
             frameCount = 1;
+            if(speed > startSpeed){
+                lastRunSecond = sec;
+                shitMap.push(currentX, currentY);
+                bodySize -= 0.005;
+                if(shitMap.length > 12){
+                    shitMap.shift();
+                    shitMap.shift();
+                }
+            }else if(shitMap.length && sec - lastRunSecond > 10){
+                shitMap.shift();
+                shitMap.shift();
+            }
         }else{
             frameCount++;
         }
@@ -149,6 +171,12 @@
                 }
             }
             
+            /*if(Math.abs(stepX) > tileW){ // tileW*2
+                stepX = stepX > 0 ? stepX - tileW : stepX + tileW;
+            }
+            if(Math.abs(stepY) > tileH){ // tileH*2
+                stepY = stepY > 0 ? stepY - tileH : stepY + tileH;
+            }*/
             if(Math.abs(stepX) > tileW*2){
                 stepX = stepX > 0 ? stepX - tileW*2 : stepX + tileW*2;
             }
@@ -157,8 +185,15 @@
             }
         }
         
+        // Background
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        //ctx.globalAlpha = 0.5;
+        ctx.save();
+        /*const pattern = ctx.createPattern(imgPatt, 'repeat');
+        ctx.fillStyle = pattern;
+        ctx.translate(stepX, stepY);
+        ctx.fillRect(-tileW, -tileH, canvas.width+(tileW*2), canvas.height+(tileH*2));
+        */
+        ctx.globalAlpha = 0.5;
         var state = 0;
         for(var y=-2.5; y < mapH; y++){
             for(var x=-2.5; x < mapW; x++){
@@ -172,6 +207,90 @@
                 ctx.fillRect(x*tileW+stepX, y*tileH+stepY, tileW, tileH);
             }
         }
+        ctx.restore();
+        
+        // Borders
+        
+        ctx.lineWidth = 700;
+        //ctx.globalCompositeOperation = 'lighter';
+        if(currentX - screenW/2 < 0){
+            var lineX = screenW/2 - currentX;
+            /*ctx.beginPath();
+            ctx.moveTo(lineX, 0);
+            ctx.lineTo(lineX, screenH);
+            ctx.stroke();*/
+            
+            ctx.save();
+            /*ctx.fillStyle = ctx.createPattern(imgRock, 'repeat');
+            ctx.translate(lineX-700, (screenH/2 - (currentY % 700)) - 700);
+            ctx.fillRect(0, 0, 700, screenH+1400);*/
+            const pRock = ctx.createPattern(imgRock, 'repeat');
+            ctx.strokeStyle = pRock;
+            //ctx.lineWidth = 700;
+            ctx.beginPath();
+            ctx.translate(lineX-700, (screenH/2 - (currentY % 700)) - 700);
+            ctx.moveTo(350, 0);
+            ctx.lineTo(350, screenH+1400);
+            ctx.stroke();
+            ctx.restore();
+            
+        }else if(currentX + screenW/2 > mapLimit){
+            var lineX = screenW/2 + (mapLimit - currentX);
+            /*ctx.beginPath();
+            ctx.moveTo(lineX, 0);
+            ctx.lineTo(lineX, screenH);
+            ctx.stroke();*/
+            
+            ctx.save();
+            const pRock = ctx.createPattern(imgRock, 'repeat');
+            ctx.strokeStyle = pRock;
+            //ctx.lineWidth = 700;
+            ctx.beginPath();
+            ctx.translate(lineX-700, (screenH/2 - (currentY % 700)) - 700);
+            ctx.moveTo(lineX+350 - (lineX-700), 0);
+            ctx.lineTo(lineX+350 - (lineX-700), screenH+1400);
+            ctx.stroke();
+            ctx.restore();
+        }
+        if(currentY - screenH/2 < 0){
+            var lineY = screenH/2 - currentY;
+            /*ctx.beginPath();
+            ctx.moveTo(0, lineY);
+            ctx.lineTo(screenW, lineY);
+            ctx.stroke();*/
+            
+            ctx.save();
+            const pRock = ctx.createPattern(imgRock, 'repeat');
+            ctx.strokeStyle = pRock;
+            //ctx.lineWidth = 700;
+            ctx.beginPath();
+            ctx.translate((screenW/2 - (currentX % 700)) - 1400, lineY-700);
+            ctx.moveTo(0, 350);
+            ctx.lineTo(screenW+1400, 350);
+            ctx.stroke();
+            ctx.restore();
+        }else if(currentY + screenH/2 > mapLimit){
+            var lineY = screenH/2 + (mapLimit - currentY);
+            /*ctx.beginPath();
+            ctx.moveTo(0, lineY);
+            ctx.lineTo(screenW, lineY);
+            ctx.stroke();*/
+            
+            ctx.save();     
+            const pRock = ctx.createPattern(imgRock, 'repeat');
+            ctx.strokeStyle = pRock;
+            //ctx.lineWidth = 700;
+            ctx.beginPath();
+            ctx.translate((screenW/2 - (currentX % 700)) - 1400, lineY-700);
+            ctx.moveTo(0, lineY+350 - (lineY-700));
+            ctx.lineTo(screenW+1400, lineY+350 - (lineY-700));
+            ctx.stroke();
+            ctx.restore();
+        }
+        
+        ctx.save();
+        ctx.shadowColor = '#523A28';
+        ctx.shadowBlur = 12;
         
         // Character
         /*ctx.beginPath();
@@ -181,10 +300,9 @@
         ctx.arc(screenW/2, screenH/2, bodySize, 0, 2*Math.PI);
         ctx.stroke();
         ctx.closePath();*/
-        
-        //ctx.globalAlpha = 1;
-        ctx.drawImage(playerImage, 48*frameX, 64*direct, 48, 64, screenW/2-22, screenH/2-32, 48*bodySize, 64*bodySize);
-        if(frameCount % 7 == 0){
+        ctx.drawImage(playerImage, 48*frameX, 64*direct, 48, 64, screenW/2-(48*bodySize/2), screenH/2-(64*bodySize/2), 48*bodySize, 64*bodySize);
+        var eachFrame = speed === startSpeed ? 12 : 7;
+        if(frameCount % eachFrame == 0){
             if(frameX<2){
                 frameX++;
             }else{
@@ -192,42 +310,12 @@
             }
         }
         
+        // Food
+        ctx.lineWidth = 2.5;
         ctx.strokeStyle = '#ffa723'; // orange
-        if(currentX - screenW/2 < 0){
-            var lineX = screenW/2 - currentX;
-            ctx.beginPath();
-            ctx.lineWidth = 4;
-            ctx.moveTo(lineX, 0);
-            ctx.lineTo(lineX, screenH);
-            ctx.stroke();
-        }else if(currentX + screenW/2 > mapLimit){
-            var lineX = screenW/2 + (mapLimit - currentX);
-            ctx.beginPath();
-            ctx.lineWidth = 4;
-            ctx.moveTo(lineX, 0);
-            ctx.lineTo(lineX, screenH);
-            ctx.stroke();
-        }
-        if(currentY - screenH/2 < 0){
-            var lineY = screenH/2 - currentY;
-            ctx.beginPath();
-            ctx.lineWidth = 4;
-            ctx.moveTo(0, lineY);
-            ctx.lineTo(screenW, lineY);
-            ctx.stroke();
-        }else if(currentY + screenH/2 > mapLimit){
-            var lineY = screenH/2 + (mapLimit - currentY);
-            ctx.beginPath();
-            ctx.lineWidth = 4;
-            ctx.moveTo(0, lineY);
-            ctx.lineTo(screenW, lineY);
-            ctx.stroke();
-        }
-        
-        //ctx.globalAlpha = 1;
         for(var i=0; i<100; i=i+2){
             if(Math.abs(currentX - foodMap[i]) < screenW/2 && Math.abs(currentY - foodMap[i+1]) < screenH/2){
-                if(Math.abs(currentX - foodMap[i]) < 12 && Math.abs(currentY - foodMap[i+1]) < 12){
+                if(Math.abs(currentX - foodMap[i]) < 14 && Math.abs(currentY - foodMap[i+1]) < 20){
                     foodMap[i] = randomIntBetween(400, mapLimit-400);
                     foodMap[i+1] = randomIntBetween(400, mapLimit-400);
                     if(bodySize < 1){
@@ -237,17 +325,31 @@
                 }
                 var foodX = (currentX > foodMap[i]) ? screenW/2 - (currentX - foodMap[i]) : screenW/2 + (foodMap[i] - currentX);
                 var foodY = (currentY > foodMap[i+1]) ? screenH/2 - (currentY - foodMap[i+1]) : screenH/2 + (foodMap[i+1] - currentY);
-                ctx.beginPath();
-                ctx.lineWidth = 2.5;
+                /*ctx.beginPath();
                 ctx.ellipse(foodX, foodY, 5, 7, Math.PI / 4, 0, 2 * Math.PI);
-                ctx.stroke();
+                ctx.stroke();*/
+                ctx.drawImage(carrotImg, foodX-11.5, foodY-11.5);
             }
         }
         
-        ctx.fillStyle = '#ff0000';
-        ctx.fillText("FPS: "+frameLastSecond, 10, 20);
+        // Shit
+        ctx.fillStyle = '#523A28';
+        for(var i=0; i<shitMap.length; i=i+2){
+            if(Math.abs(currentX - shitMap[i]) < screenW/2 && Math.abs(currentY - shitMap[i+1]) < screenH/2){
+                var shitX = (currentX > shitMap[i]) ? screenW/2 - (currentX - shitMap[i]) : screenW/2 + (shitMap[i] - currentX);
+                var shitY = (currentY > shitMap[i+1]) ? screenH/2 - (currentY - shitMap[i+1]) : screenH/2 + (shitMap[i+1] - currentY);
+                
+                ctx.beginPath();
+                ctx.ellipse(shitX, shitY+15, 5, 3, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        ctx.restore();
         
-        myAnim = requestAnimationFrame(drawGame);
+        //ctx.fillStyle = '#ff0000';
+        //ctx.fillText("FPS: "+frameLastSecond, 10, 20);
+        
+        requestAnimationFrame(drawGame);
     }
     
     function randomIntBetween(min, max) { // min and max included 
