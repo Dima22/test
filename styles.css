@@ -10,7 +10,6 @@
     background-repeat: no-repeat;
     background-image: url(img/fs.png);
 }
-
 #nick {
 	width: 244px;
 	height: 43px;
@@ -27,7 +26,6 @@
 	color: #e0e0ff;
 	padding: 0 12px;
 }
-
 #playBut {
     width: 87px;
     color: rgb(255, 255, 255);
